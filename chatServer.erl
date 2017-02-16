@@ -19,10 +19,10 @@ stop() ->
 loop() ->
 	receive
 		{From, login, Name} ->
-			connectClient(From, Name),
+			client_connect(From, Name),
 			loop();
 		{From, leave} ->
-			clientLeaved(From),
+			client_disconnect(From),
 			loop();
 		{From, exit} ->
 			unregister(chatServer),
@@ -33,31 +33,33 @@ loop() ->
 			exit(error)
 	end.
 
-connectClient(From, Name) ->
+client_connect(From, Name) ->
 	io:format('New client: ~s.~n', [Name]),
 	Connect = put(Name, From),
 	case Connect of
 		undefined ->
 			From ! {self(), welcome},
-			Names = collectNames(),
+			Names = client_names(),
 			From ! {self(), names, Names};
 		_ ->
 			io:format('Already logged.~n'),
 			From ! {self(), exit}
 	end.
 
-collectNames() ->
+client_disconnect(From) ->
+	io:format('Client ~p leaved.~n', [From]),
+	From ! {self(), exit}.
+
+client_names() ->
 	Keys = get(),
-	Names = collectNames([], Keys),
+	Names = client_names([], Keys),
 	Names.
 
-collectNames(Names, [H|T]) ->
+client_names(Names, [H|T]) ->
 	{Name, _} = H,
 	NewNames = [Name|Names],
-	collectNames(NewNames, T);
+	client_names(NewNames, T);
 
-collectNames(Names, []) ->
+client_names(Names, []) ->
 	lists:reverse(Names).
 
-clientLeaved(From) ->
-	From ! {self(), exit}.
