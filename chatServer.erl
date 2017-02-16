@@ -28,6 +28,9 @@ loop() ->
 			Names = client_names(),
 			From ! {self(), {names, Names}},
 			loop();
+		{From, {message, Message}} ->
+			client_message(From, Message),
+			loop();
 		{_, exit} ->
 			unregister(chatServer),
 			io:format('Server is stopped.~n'),
@@ -47,6 +50,10 @@ client_connect(From, Name) ->
 			io:format('Already logged.~n'),
 			From ! {self(), exit}
 	end.
+
+client_message(FromPid, Message) ->
+	FromName = client_name(FromPid),
+	notify_clients({message, FromName, Message}).
 
 client_disconnect(From) ->
 	io:format('Client ~p leaved.~n', [From]),
