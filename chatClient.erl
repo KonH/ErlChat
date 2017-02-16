@@ -1,16 +1,24 @@
 -module(chatClient).
--export([connect/1, disconnect/1, who_is_here/1, message/2]).
+-export([connect/1, connect/2, disconnect/1, who_is_here/1, message/2]).
+
+connect(Host, Name) ->
+	io:format('Remote host: ~p.~n', [Host]),
+	ServerPid = rpc:call(Host, chatServer, find, []),
+	io:format('Remote server: ~p.~n', [ServerPid]),
+	put(chatServer, ServerPid),
+	connect_to(Name, ServerPid).
 
 connect(Name) ->
 	ServerPid = whereis(chatServer),
-	connect(Name, ServerPid).
+	connect_to(Name, ServerPid).
 
-connect(_, undefined) ->
+connect_to(undefined, _) ->
 	io:format('Can\'t find server.~n'),
 	undefined;
 
-connect(Name, ServerPid) ->
+connect_to(ServerPid, Name) ->
 	io:format('Connect to ~p.~n', [ServerPid]),
+	put(chatServer, ServerPid),
 	ClientPid = spawn(fun loop/0),
 	ServerPid ! {ClientPid, {login, Name}},
 	ClientPid.
@@ -43,5 +51,5 @@ loop() ->
 	end.
 
 server_ask(Pid, What) ->
-	ServerPid = whereis(chatServer),
+	ServerPid = get(chatServer),
 	ServerPid ! {Pid, What}.

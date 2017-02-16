@@ -1,5 +1,5 @@
 -module(chatServer).
--export([start/0, stop/0]).
+-export([start/0, stop/0, find/0]).
 
 start() ->
 	Pid = spawn(fun loop/0),
@@ -15,6 +15,10 @@ stop() ->
 		_ ->
 			Pid ! {self(), exit}
 	end.
+
+find() ->
+	Pid = whereis(chatServer),
+	Pid.
 
 loop() ->
 	receive
