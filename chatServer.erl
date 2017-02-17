@@ -1,12 +1,14 @@
 -module(chatServer).
 -export([start/0, stop/0, find/0]).
 
+-spec start() -> pid().
 start() ->
 	Pid = spawn(fun loop/0),
 	register(chatServer, Pid),
 	io:format('Server is started.~n'),
 	Pid.
 
+-spec stop() -> any().
 stop() ->
 	Pid = whereis(chatServer),
 	case Pid of
@@ -16,6 +18,7 @@ stop() ->
 			Pid ! {self(), exit}
 	end.
 
+-spec find() -> pid().
 find() ->
 	Pid = whereis(chatServer),
 	Pid.

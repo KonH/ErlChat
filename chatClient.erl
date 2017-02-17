@@ -1,6 +1,7 @@
 -module(chatClient).
 -export([connect/1, connect/2, disconnect/1, who_is_here/1, message/2]).
 
+-spec connect(Host::string(), Name::string()) -> pid().
 connect(Host, Name) ->
 	io:format('Remote host: ~p.~n', [Host]),
 	ServerPid = rpc:call(Host, chatServer, find, []),
@@ -8,6 +9,7 @@ connect(Host, Name) ->
 	put(chatServer, ServerPid),
 	connect_to(Name, ServerPid).
 
+-spec connect(Name::string()) -> pid().
 connect(Name) ->
 	ServerPid = whereis(chatServer),
 	connect_to(Name, ServerPid).
@@ -23,12 +25,15 @@ connect_to(ServerPid, Name) ->
 	ServerPid ! {ClientPid, {login, Name}},
 	ClientPid.
 
+-spec who_is_here(Pid::pid()) -> any().
 who_is_here(Pid) ->
 	server_ask(Pid, who).
 
+-spec message(Pid::pid(), Message::any()) -> any().
 message(Pid, Message) ->
 	server_ask(Pid, {message, Message}).
 
+-spec disconnect(Pid::pid()) -> any().
 disconnect(Pid) ->
 	server_ask(Pid, leave).
 
