@@ -80,14 +80,7 @@ notify_names() ->
 
 notify_clients(Message) ->
 	Pids = client_pids(),
-	notify_clients(Pids, Message).
-
-notify_clients([H|T], Message) ->
-	H ! {self(), Message},
-	notify_clients(T, Message);
-
-notify_clients([], _) ->
-	true.
+	lists:map(fun(Pid) -> Pid ! {self(), Message} end, Pids).
 
 client_name(Pid) ->
 	Keys = get(),
