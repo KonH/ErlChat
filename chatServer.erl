@@ -1,7 +1,9 @@
+%% @doc Chat server implementation
 -module(chatServer).
 -export([start/0, stop/0, find/0]).
 
 -spec start() -> pid().
+%% @doc start server and register it as 'chatServer'
 start() ->
 	Pid = spawn(fun loop/0),
 	register(chatServer, Pid),
@@ -9,6 +11,7 @@ start() ->
 	Pid.
 
 -spec stop() -> any().
+%% @doc stop current server, if it is started
 stop() ->
 	Pid = whereis(chatServer),
 	case Pid of
@@ -19,6 +22,7 @@ stop() ->
 	end.
 
 -spec find() -> pid().
+%% @doc find current chat server pid, if it is started
 find() ->
 	Pid = whereis(chatServer),
 	Pid.

@@ -1,7 +1,9 @@
+%% @doc Chat client implementation
 -module(chatClient).
 -export([connect/1, connect/2, disconnect/1, who_is_here/1, message/2]).
 
 -spec connect(Host::string(), Name::string()) -> pid().
+%% @doc connect to remote node with client name and return its Pid
 connect(Host, Name) ->
 	io:format('Remote host: ~p.~n', [Host]),
 	ServerPid = rpc:call(Host, chatServer, find, []),
@@ -10,6 +12,7 @@ connect(Host, Name) ->
 	connect_to(Name, ServerPid).
 
 -spec connect(Name::string()) -> pid().
+%% @doc connect to local node with client name and return its Pid
 connect(Name) ->
 	ServerPid = whereis(chatServer),
 	connect_to(Name, ServerPid).
@@ -26,14 +29,17 @@ connect_to(ServerPid, Name) ->
 	ClientPid.
 
 -spec who_is_here(Pid::pid()) -> any().
+%% @doc retrive current logged users for client with Pid
 who_is_here(Pid) ->
 	server_ask(Pid, who).
 
 -spec message(Pid::pid(), Message::any()) -> any().
+%% @doc send any message to all logged clients from client with Pid
 message(Pid, Message) ->
 	server_ask(Pid, {message, Message}).
 
 -spec disconnect(Pid::pid()) -> any().
+%% @doc disconnect from server for client with Pid
 disconnect(Pid) ->
 	server_ask(Pid, leave).
 

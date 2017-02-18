@@ -1,0 +1,5 @@
+@author KonH <konh@yandex.ru>
+@copyright 20017 Konstantin Khitrykh
+@version 0.1.0
+@title Welcome to the ErlChat application!
+@doc `ErlChat' is a simple client-server chat, that can be used on separated Erlang nodes.
