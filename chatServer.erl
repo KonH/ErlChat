@@ -8,6 +8,7 @@ start() ->
 	Pid = spawn(fun loop/0),
 	register(chatServer, Pid),
 	io:format('Server is started.~n'),
+	chatStorage:start(),
 	Pid.
 
 -spec stop() -> any().
@@ -18,7 +19,8 @@ stop() ->
 		undefined ->
 			io:format('Server isn\'t started.~n');
 		_ ->
-			Pid ! {self(), exit}
+			Pid ! {self(), exit},
+			chatStorage:stop()
 	end.
 
 -spec find() -> pid().
@@ -64,7 +66,9 @@ client_connect(From, Name) ->
 
 client_message(FromPid, Message) ->
 	FromName = client_name(FromPid),
-	notify_clients({message, cur_time(), FromName, Message}).
+	FullMessage = {message, cur_time(), FromName, Message},
+	notify_clients(FullMessage),
+	chatStorage:store(FullMessage).
 
 client_disconnect(From) ->
 	io:format('Client ~p leaved.~n', [From]),
