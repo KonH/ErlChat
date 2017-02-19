@@ -44,11 +44,15 @@ loop() ->
 		{From, {message, Message}} ->
 			client_message(From, Message),
 			loop();
+		{_, {history, To, History}} ->
+			client_history(To, History),
+			loop();
 		{_, exit} ->
 			unregister(chatServer),
 			io:format('Server is stopped.~n'),
 			exit(normal);
-		_ -> 
+		Other ->
+			io:format('Unknown signal: ~p.~n', [Other]),
 			exit(error)
 	end.
 
@@ -58,11 +62,21 @@ client_connect(From, Name) ->
 	case Connect of
 		undefined ->
 			From ! {self(), welcome, cur_time()},
-			notify_names();
+			notify_names(),
+			ask_history(From);
 		_ ->
 			io:format('Already logged.~n'),
 			From ! {self(), exit}
 	end.
+
+ask_history(From) ->
+	chatStorage:history(From).
+
+client_history(To, History) ->
+	lists:map(fun(Item) ->
+		[{_, Message}] = Item,
+		To ! {self(), Message}
+		end, History).
 
 client_message(FromPid, Message) ->
 	FromName = client_name(FromPid),

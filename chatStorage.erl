@@ -1,5 +1,5 @@
 -module(chatStorage).
--export([start/0, store/1, stop/0]).
+-export([start/0, store/1, history/1, stop/0]).
 
 start() ->
 	Pid = spawn(fun loop/0),
@@ -15,16 +15,12 @@ store(Message) ->
 add_message(Message) ->
 	TableId = get(history),
 	MessageId = get(count), 
-	ets:insert(TableId, {MessageId, Message}),
-	io:format('Message ~p saved to ~p.~n', [Message, MessageId]),
-	Value = ets:lookup(TableId, MessageId),
-	io:format('Message at ~p is ~p.~n', [MessageId, Value]).
+	ets:insert(TableId, {MessageId, Message}).
 
 update_count() ->
 	Count = get(count),
 	NewCount = Count + 1,
-	put(count, NewCount),
-	io:format('New count is ~p.~n', [NewCount]).
+	put(count, NewCount).
 
 stop() ->
 	Pid = whereis(chatStorage),
@@ -44,6 +40,10 @@ loop() ->
 			add_message(Message),
 			update_count(),
 			loop();
+		{From, {history, To}} ->
+			History = self_history(),
+			From ! {self(), {history, To, History}},
+			loop();
 		{_, exit} ->
 			unregister(chatStorage),
 			close(),
@@ -57,9 +57,32 @@ open() ->
 	TableId = ets:new(history, [ordered_set]),
 	put(count, 0),
 	put(history, TableId),
-	add_message({message, {{2017,2,19},{20,46,5}}, test, 'test'}),
 	update_count().
 
 close() ->
 	TableId = get(history),
 	ets:delete(TableId).
+
+history(ClientPid) ->
+	Pid = whereis(chatStorage),
+	Pid ! {self(), {history, ClientPid}}.
+
+self_history() ->
+	TableId = get(history),
+	self_history(TableId).
+
+self_history(TableId) ->
+	Key = ets:first(TableId),
+	History = self_history(TableId, Key, []),
+	History.
+
+self_history(TableId, Key, Acc) ->
+	case Key of
+		'$end_of_table' ->
+			RevAcc = lists:reverse(Acc),
+			RevAcc;
+		_ ->
+			Value = ets:lookup(TableId, Key),
+			NextKey = ets:next(TableId, Key),
+			self_history(TableId, NextKey, [Value|Acc])
+	end.
