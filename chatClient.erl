@@ -57,6 +57,8 @@ loop() ->
 		{_, exit, Time} ->
 			io:format('~p: [~s] Client disconnected.~n', [self(), simply_time(Time)]),
 			exit(normal);
+		{_, exit} ->
+			exit(normal);
 		X ->
 			io:format('Unknown message: ~p~n', [X]),
 			exit(error)
