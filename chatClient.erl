@@ -45,22 +45,28 @@ disconnect(Pid) ->
 
 loop() ->
 	receive
-		{_, welcome} ->
-			io:format('~p: You are welcome!~n', [self()]),
+		{_, welcome, Time} ->
+			io:format('~p: [~s] You are welcome!~n', [self(), simply_time(Time)]),
 			loop();
-		{_, {names, Names}} ->
-			io:format('~p: Clients here: ~p.~n', [self(), Names]),
+		{_, {names, Time, Names}} ->
+			io:format('~p: [~s] Clients here: ~p.~n', [self(), simply_time(Time), Names]),
 			loop();
-		{_, {message, From, Message}} ->
-			io:format('~p: ~p: ~p~n', [self(), From, Message]),
+		{_, {message, Time, From, Message}} ->
+			io:format('~p: [~s] ~p: ~p~n', [self(), simply_time(Time), From, Message]),
 			loop();
-		{_, exit} ->
-			io:format('~p: Client disconnected.~n', [self()]),
+		{_, exit, Time} ->
+			io:format('~p: [~s] Client disconnected.~n', [self(), simply_time(Time)]),
 			exit(normal);
-		_ ->
+		X ->
+			io:format('Unknown message: ~p~n', [X]),
 			exit(error)
 	end.
 
 server_ask(Pid, What) ->
 	ServerPid = get(chatServer),
 	ServerPid ! {Pid, What}.
+
+simply_time(T) ->
+	{_, {H, M, _}} = T,
+	io_lib:format("~2..0b:~2..0b", [H, M]).
+

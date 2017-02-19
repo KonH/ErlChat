@@ -37,7 +37,7 @@ loop() ->
 			loop();
 		{From, who} ->
 			Names = client_names(),
-			From ! {self(), {names, Names}},
+			From ! {self(), {names, cur_time(), Names}},
 			loop();
 		{From, {message, Message}} ->
 			client_message(From, Message),
@@ -55,7 +55,7 @@ client_connect(From, Name) ->
 	Connect = put(Name, From),
 	case Connect of
 		undefined ->
-			From ! {self(), welcome},
+			From ! {self(), welcome, cur_time()},
 			notify_names();
 		_ ->
 			io:format('Already logged.~n'),
@@ -64,12 +64,12 @@ client_connect(From, Name) ->
 
 client_message(FromPid, Message) ->
 	FromName = client_name(FromPid),
-	notify_clients({message, FromName, Message}).
+	notify_clients({message, cur_time(), FromName, Message}).
 
 client_disconnect(From) ->
 	io:format('Client ~p leaved.~n', [From]),
 	remove_client(From),
-	From ! {self(), exit},
+	From ! {self(), exit, cur_time()},
 	notify_names().
 
 remove_client(From) ->
@@ -83,7 +83,7 @@ remove_client(From) ->
 
 notify_names() ->
 	Names = client_names(),
-	notify_clients({names, Names}).
+	notify_clients({names, cur_time(), Names}).
 
 notify_clients(Message) ->
 	Pids = client_pids(),
@@ -130,4 +130,7 @@ client_pids(Pids, [H|T]) ->
 
 client_pids(Pids, []) ->
 	Pids.
+
+cur_time() ->
+	calendar:local_time().
 
