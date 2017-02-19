@@ -9,13 +9,13 @@ connect(Host, Name) ->
 	ServerPid = rpc:call(Host, chatServer, find, []),
 	io:format('Remote server: ~p.~n', [ServerPid]),
 	put(chatServer, ServerPid),
-	connect_to(Name, ServerPid).
+	connect_to(ServerPid, Name).
 
 -spec connect(Name::string()) -> pid().
 %% @doc connect to local node with client name and return its Pid
 connect(Name) ->
 	ServerPid = whereis(chatServer),
-	connect_to(Name, ServerPid).
+	connect_to(ServerPid, Name).
 
 connect_to(undefined, _) ->
 	io:format('Can\'t find server.~n'),
