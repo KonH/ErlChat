@@ -1,6 +1,8 @@
 -module(chatStorage).
 -export([start/0, store/1, history/1, stop/0]).
 
+-spec start() -> pid().
+%% @doc start chat storage and register it as 'chatStorage'
 start() ->
 	Pid = spawn(fun loop/0),
 	register(chatStorage, Pid),
@@ -8,6 +10,8 @@ start() ->
 	io:format('Storage is started.~n'),
 	Pid.
 
+-spec store(Message::any()) -> any().
+%% @doc store message to current chat storage
 store(Message) ->
 	Pid = whereis(chatStorage),
 	Pid ! {self(), store, Message}.
@@ -22,6 +26,8 @@ update_count() ->
 	NewCount = Count + 1,
 	put(count, NewCount).
 
+-spec stop() -> any().
+%% @doc stop current chat storage if it is started
 stop() ->
 	Pid = whereis(chatStorage),
 	case Pid of
@@ -63,6 +69,8 @@ close() ->
 	TableId = get(history),
 	ets:delete(TableId).
 
+-spec history(ClientPid::pid()) -> any().
+%% @doc retrieve current chat history and send it to provided pid
 history(ClientPid) ->
 	Pid = whereis(chatStorage),
 	Pid ! {self(), {history, ClientPid}}.

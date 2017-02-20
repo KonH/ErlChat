@@ -2,40 +2,45 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>Module chatServer</title>
+<title>Module chatStorage</title>
 <link rel="stylesheet" type="text/css" href="stylesheet.css" title="EDoc">
 </head>
 <body bgcolor="white">
 <div class="navbar"><a name="#navbar_top"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
 <hr>
 
-<h1>Module chatServer</h1>
-<ul class="index"><li><a href="#description">Description</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>Chat server implementation.
+<h1>Module chatStorage</h1>
+<ul class="index"><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>
 
 
-<h2><a name="description">Description</a></h2>Chat server implementation
 <h2><a name="index">Function Index</a></h2>
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#find-0">find/0</a></td><td>find current chat server pid, if it is started.</td></tr>
-<tr><td valign="top"><a href="#start-0">start/0</a></td><td>start server and register it as 'chatServer'.</td></tr>
-<tr><td valign="top"><a href="#stop-0">stop/0</a></td><td>stop current server, if it is started.</td></tr>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#history-1">history/1</a></td><td>retrieve current chat history and send it to provided pid.</td></tr>
+<tr><td valign="top"><a href="#start-0">start/0</a></td><td>start chat storage and register it as 'chatStorage'.</td></tr>
+<tr><td valign="top"><a href="#stop-0">stop/0</a></td><td>stop current chat storage if it is started.</td></tr>
+<tr><td valign="top"><a href="#store-1">store/1</a></td><td>store message to current chat storage.</td></tr>
 </table>
 
 <h2><a name="functions">Function Details</a></h2>
 
-<h3 class="function"><a name="find-0">find/0</a></h3>
+<h3 class="function"><a name="history-1">history/1</a></h3>
 <div class="spec">
-<p><tt>find() -&gt; pid()</tt><br></p>
-</div><p>find current chat server pid, if it is started</p>
+<p><tt>history(ClientPid::pid()) -&gt; any()</tt><br></p>
+</div><p>retrieve current chat history and send it to provided pid</p>
 
 <h3 class="function"><a name="start-0">start/0</a></h3>
 <div class="spec">
 <p><tt>start() -&gt; pid()</tt><br></p>
-</div><p>start server and register it as 'chatServer'</p>
+</div><p>start chat storage and register it as 'chatStorage'</p>
 
 <h3 class="function"><a name="stop-0">stop/0</a></h3>
 <div class="spec">
 <p><tt>stop() -&gt; any()</tt><br></p>
-</div><p>stop current server, if it is started</p>
+</div><p>stop current chat storage if it is started</p>
+
+<h3 class="function"><a name="store-1">store/1</a></h3>
+<div class="spec">
+<p><tt>store(Message::any()) -&gt; any()</tt><br></p>
+</div><p>store message to current chat storage</p>
 <hr>
 
 <div class="navbar"><a name="#navbar_bottom"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
