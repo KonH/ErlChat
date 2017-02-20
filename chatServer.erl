@@ -5,6 +5,15 @@
 -spec start() -> pid().
 %% @doc start server and register it as 'chatServer'
 start() ->
+	CurPid = whereis(chatServer),
+	case CurPid of
+		undefined ->
+			start_internal();
+		_ ->
+			io:format('Server already started.~n')
+	end.
+
+start_internal() ->
 	Pid = spawn(fun loop/0),
 	register(chatServer, Pid),
 	io:format('Server is started.~n'),

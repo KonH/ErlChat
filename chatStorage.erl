@@ -4,6 +4,15 @@
 -spec start() -> pid().
 %% @doc start chat storage and register it as 'chatStorage'
 start() ->
+	CurPid = whereis(chatStorage),
+	case CurPid of
+		undefined ->
+			start_internal();
+		_ ->
+			io:format('Storage already started.~n')
+	end.
+
+start_internal() ->
 	Pid = spawn(fun loop/0),
 	register(chatStorage, Pid),
 	Pid ! {self(), start},
@@ -14,7 +23,13 @@ start() ->
 %% @doc store message to current chat storage
 store(Message) ->
 	Pid = whereis(chatStorage),
-	Pid ! {self(), store, Message}.
+	case Pid of
+		undefined ->
+			start_internal(),
+			store(Message);
+		_ ->
+			Pid ! {self(), store, Message}
+	end.
 
 add_message(Message) ->
 	TableId = get(history),
