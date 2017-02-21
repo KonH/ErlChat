@@ -32,14 +32,13 @@ store(Message) ->
 	end.
 
 add_message(Message) ->
-	TableId = get(history),
-	MessageId = get(count), 
-	ets:insert(TableId, {MessageId, Message}).
+	[{_, MessageId}] = dets:lookup(history, count),
+	dets:insert(history, {MessageId, Message}).
 
 update_count() ->
-	Count = get(count),
+	[{_, Count}] = dets:lookup(history, count),
 	NewCount = Count + 1,
-	put(count, NewCount).
+	dets:insert(history, {count, NewCount}).
 
 -spec stop() -> any().
 %% @doc stop current chat storage if it is started
@@ -75,14 +74,23 @@ loop() ->
 	end.
 
 open() ->
-	TableId = ets:new(history, [ordered_set]),
-	put(count, 0),
-	put(history, TableId),
-	update_count().
+	File = "history.dets",
+	io:format("Open/create file: ~p.~n" , [File]),
+	Bool = filelib:is_file(File),
+	case dets:open_file(history, [{file, File}]) of
+		{ok, history} ->
+			case Bool of
+				true -> void;
+				false -> ok = dets:insert(history, {count, 1})
+			end,
+			true;
+		{error,_Reason} ->
+			io:format("Can't open file.~n" ),
+			exit(error)
+	end.
 
 close() ->
-	TableId = get(history),
-	ets:delete(TableId).
+	dets:close(history).
 
 -spec history(ClientPid::pid()) -> any().
 %% @doc retrieve current chat history and send it to provided pid
@@ -91,21 +99,18 @@ history(ClientPid) ->
 	Pid ! {self(), {history, ClientPid}}.
 
 self_history() ->
-	TableId = get(history),
-	self_history(TableId).
-
-self_history(TableId) ->
-	Key = ets:first(TableId),
-	History = self_history(TableId, Key, []),
+	SkipKey = dets:first(history),
+	Key = dets:next(history, SkipKey),
+	History = self_history(Key, []),
 	History.
 
-self_history(TableId, Key, Acc) ->
+self_history(Key, Acc) ->
 	case Key of
 		'$end_of_table' ->
 			RevAcc = lists:reverse(Acc),
 			RevAcc;
 		_ ->
-			Value = ets:lookup(TableId, Key),
-			NextKey = ets:next(TableId, Key),
-			self_history(TableId, NextKey, [Value|Acc])
+			Value = dets:lookup(history, Key),
+			NextKey = dets:next(history, Key),
+			self_history(NextKey, [Value|Acc])
 	end.
