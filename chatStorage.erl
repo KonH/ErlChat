@@ -1,3 +1,4 @@
+%% @doc Chat message storage implementation
 -module(chatStorage).
 -behaviour(gen_server).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -25,7 +26,7 @@ store(Message) ->
 history() ->
 	gen_server:call(?MODULE, {history}).
 
-% gen_storage callbacks
+% gen_server callbacks
 
 init([]) ->
 	open(history, "history.dets").
@@ -35,7 +36,6 @@ handle_call({store, Message}, _From, State) ->
 	{reply, Reply, State};
 
 handle_call({history}, _From, State) ->
-	io:format('history call'),
 	Reply = history(State),
 	{reply, Reply, State};
 
