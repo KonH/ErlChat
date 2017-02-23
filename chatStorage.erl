@@ -1,116 +1,109 @@
 -module(chatStorage).
--export([start/0, store/1, history/1, stop/0]).
+-behaviour(gen_server).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
+-export([start/0, store/1, history/0, stop/0]).
 
--spec start() -> pid().
-%% @doc start chat storage and register it as 'chatStorage'
+% helper methods
+
+-spec start() -> {ok, pid()}.
+% @doc start chat message storage
 start() ->
-	CurPid = whereis(chatStorage),
-	case CurPid of
-		undefined ->
-			start_internal();
-		_ ->
-			io:format('Storage already started.~n')
-	end.
+	gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-start_internal() ->
-	Pid = spawn(fun loop/0),
-	register(chatStorage, Pid),
-	Pid ! {self(), start},
-	io:format('Storage is started.~n'),
-	Pid.
-
--spec store(Message::any()) -> any().
-%% @doc store message to current chat storage
-store(Message) ->
-	Pid = whereis(chatStorage),
-	case Pid of
-		undefined ->
-			start_internal(),
-			store(Message);
-		_ ->
-			Pid ! {self(), store, Message}
-	end.
-
-add_message(Message) ->
-	[{_, MessageId}] = dets:lookup(history, count),
-	dets:insert(history, {MessageId, Message}).
-
-update_count() ->
-	[{_, Count}] = dets:lookup(history, count),
-	NewCount = Count + 1,
-	dets:insert(history, {count, NewCount}).
-
--spec stop() -> any().
-%% @doc stop current chat storage if it is started
+-spec stop() -> void.
+% @doc stop current chat message storage
 stop() ->
-	Pid = whereis(chatStorage),
-	case Pid of
-		undefined ->
-			io:format('Storage isn\'t started.~n');
-		_ ->
-			Pid ! {self(), exit}
-	end.
+	gen_server:call(?MODULE, {stop}).
 
-loop() ->
-	receive
-		{_, start} ->
-			open(),
-			loop();
-		{_, store, Message} ->
-			add_message(Message),
-			update_count(),
-			loop();
-		{From, {history, To}} ->
-			History = self_history(),
-			From ! {self(), {history, To, History}},
-			loop();
-		{_, exit} ->
-			unregister(chatStorage),
-			close(),
-			io:format('Storage is stopped.~n'),
-			exit(normal);
-		Signal ->
-			io:format('Unknown signal: ~p.~n', [Signal])
-	end.
+-spec store(Message::any()) -> boolean().
+% @doc store message to chat message storage
+store(Message) ->
+	gen_server:call(?MODULE, {store, Message}).
 
-open() ->
-	File = "history.dets",
+-spec history() -> [].
+% @doc get current messages history
+history() ->
+	gen_server:call(?MODULE, {history}).
+
+% gen_storage callbacks
+
+init([]) ->
+	open(history, "history.dets").
+
+handle_call({store, Message}, _From, State) ->
+	Reply = add_message(Message, State),
+	{reply, Reply, State};
+
+handle_call({history}, _From, State) ->
+	io:format('history call'),
+	Reply = history(State),
+	{reply, Reply, State};
+
+handle_call({stop}, _From, State) ->
+	Reply = close(State),
+	{stop, Reply, State}.
+
+handle_cast(_Msg, State) ->
+	{noreply, State}.
+
+handle_info(_Info, State) ->
+	{noreply, State}.
+
+terminate(_Reason, State) ->
+	close(State).
+
+code_change(_OldVsn, State, _Extra) ->
+	{ok, State}.
+
+% init handler
+
+open(Table, File) ->
 	io:format("Open/create file: ~p.~n" , [File]),
-	Bool = filelib:is_file(File),
-	case dets:open_file(history, [{file, File}]) of
-		{ok, history} ->
-			case Bool of
+	Exist = filelib:is_file(File),
+	Result = dets:open_file(Table, [{file, File}]),
+	case Result of
+		{ok, Table} ->
+			case Exist of
 				true -> void;
-				false -> ok = dets:insert(history, {count, 1})
-			end,
-			true;
-		{error,_Reason} ->
-			io:format("Can't open file.~n" ),
-			exit(error)
-	end.
+				false -> ok = dets:insert(Table, {count, 1})
+			end;
+		{error, _Reason} ->
+			io:format("Can't open file.~n" )
+	end,
+	Result.
 
-close() ->
-	dets:close(history).
+% store handler
 
--spec history(ClientPid::pid()) -> any().
-%% @doc retrieve current chat history and send it to provided pid
-history(ClientPid) ->
-	Pid = whereis(chatStorage),
-	Pid ! {self(), {history, ClientPid}}.
+add_message(Message, Table) ->
+	[{_, MessageId}] = dets:lookup(Table, count),
+	dets:insert(Table, {MessageId, Message}),
+	update_count(Table),
+	true.
 
-self_history() ->
-	SkipKey = dets:first(history),
-	Key = dets:next(history, SkipKey),
-	History = self_history(Key, []),
+update_count(Table) ->
+	[{_, Count}] = dets:lookup(Table, count),
+	NewCount = Count + 1,
+	dets:insert(Table, {count, NewCount}).
+
+% history handler
+
+history(Table) ->
+	SkipKey = dets:first(Table),
+	Key = dets:next(Table, SkipKey),
+	History = history(Table, Key, []),
 	History.
 
-self_history(Key, Acc) ->
+history(Table, Key, Acc) ->
 	case Key of
 		'$end_of_table' ->
-			RevAcc = lists:reverse(Acc),
-			RevAcc;
+			Acc;
 		_ ->
-			Value = dets:lookup(history, Key),
-			NextKey = dets:next(history, Key),
-			self_history(NextKey, [Value|Acc])
+			Value = dets:lookup(Table, Key),
+			NextKey = dets:next(Table, Key),
+			history(Table, NextKey, [Value|Acc])
 	end.
+
+% terminate handler
+
+close(Table) ->
+	dets:close(Table).
